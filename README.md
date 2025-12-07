@@ -16,7 +16,6 @@ Simplemente hz **doble click** en el archivo `liga_multisport.html`. Se abrirá 
 ### 2. Modo Administrador
 
 - Accede al modo administrador pulsando el candado en la parte superior derecha o escribiendo la contraseña en el campo invisible al final de la página.
-- **Contraseña por defecto**: `4321`
 - Desde el panel de control puedes:
   - Añadir Jugadores
   - Registrar Torneos
