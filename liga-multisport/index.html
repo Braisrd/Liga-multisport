@@ -277,13 +277,17 @@ Los puntos se obtienen participando en torneos y ganándolos, siendo los puntos 
 
                         if (docSnap.exists()) {
                             const pwd = docSnap.data().password;
-                            setPassword(pwd);
+                            // Auto-migrate old insecure password to new standard
+                            if (pwd === "4321") {
+                                await window.setDoc(docRef, { password: "InefSport2526" });
+                                setPassword("InefSport2526");
+                            } else {
+                                setPassword(pwd);
+                            }
                         } else {
-                            // Create initial password document with a secure default
-                            const initialPassword = "PasoEcuador2526!";
-                            await window.setDoc(docRef, { password: initialPassword });
-                            setPassword(initialPassword);
-                            alert("Contraseña inicial creada: PasoEcuador2526! - Por favor cámbiala en Configuración");
+                            // Create initial password document with standard password
+                            await window.setDoc(docRef, { password: "InefSport2526" });
+                            setPassword("InefSport2526");
                         }
                     } catch (e) {
                         console.error("Error loading password:", e);
