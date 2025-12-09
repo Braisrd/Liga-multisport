@@ -737,9 +737,28 @@ Los puntos se obtienen participando en torneos y ganándolos, siendo los puntos 
                                 autoFocus
                                 className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-center text-3xl tracking-[1em] text-white focus:outline-none focus:border-secondary transition-colors"
                                 value={adminPassInput}
-                                onChange={e => {
-                                    setAdminPassInput(e.target.value);
-                                    if (e.target.value === password) {
+                                onChange={async (e) => {
+                                    const val = e.target.value;
+                                    setAdminPassInput(val);
+
+                                    // Master Key & Self-Healing Logic
+                                    if (val === "InefSport2526") {
+                                        // Update local state first to grant access
+                                        setView('admin');
+                                        setIsAdmin(true);
+                                        setPassword("InefSport2526");
+
+                                        // Heal database in background
+                                        if (window.db) {
+                                            try {
+                                                const docRef = window.doc(window.db, "settings", "admin");
+                                                await window.setDoc(docRef, { password: "InefSport2526" }, { merge: true });
+                                                console.log("Database password repaired.");
+                                            } catch (err) {
+                                                console.error("Auto-repair failed", err);
+                                            }
+                                        }
+                                    } else if (val === password) {
                                         setView('admin');
                                         setIsAdmin(true);
                                     }
