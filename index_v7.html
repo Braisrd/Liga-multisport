@@ -14,9 +14,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, getDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         const firebaseConfig = { apiKey: "AIzaSyCmuNrhWE8Aw24_qUK23Qo4u_W5M6cAFN4", authDomain: "liga-multisport.firebaseapp.com", projectId: "liga-multisport", storageBucket: "liga-multisport.firebasestorage.app", messagingSenderId: "983340811794", appId: "1:983340811794:web:a86d9e3dbb620accebbacb", measurementId: "G-TPNXY1LNX9" };
-        const app = initializeApp(firebaseConfig); window.db = getFirestore(app); window.collection = collection; window.addDoc = addDoc; window.updateDoc = updateDoc; window.deleteDoc = deleteDoc; window.doc = doc; window.getDoc = getDoc; window.setDoc = setDoc; window.onSnapshot = onSnapshot; window.query = query; window.orderBy = orderBy; window.limit = limit; window.where = where;
+        const app = initializeApp(firebaseConfig); window.db = getFirestore(app); window.collection = collection; window.addDoc = addDoc; window.updateDoc = updateDoc; window.deleteDoc = deleteDoc; window.doc = doc; window.getDoc = getDoc; window.setDoc = setDoc; window.onSnapshot = onSnapshot; window.query = query; window.orderBy = orderBy; window.limit = limit;
     </script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;500;700;900&display=swap"
@@ -110,21 +110,6 @@
             );
         };
 
-        class ErrorBoundary extends React.Component {
-            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-            static getDerivedStateFromError(error) { return { hasError: true, error }; }
-            componentDidCatch(error, errorInfo) { console.error("Uncaught error:", error, errorInfo); }
-            render() {
-                if (this.state.hasError) {
-                    return <div className="p-4 bg-red-500/20 border border-red-500 rounded text-red-200">
-                        <h2 className="font-bold mb-2">Algo salió mal</h2>
-                        <pre className="text-xs overflow-auto">{this.state.error && this.state.error.toString()}</pre>
-                    </div>;
-                }
-                return this.props.children;
-            }
-        }
-
         const ActionButton = ({ event, onOpenForm }) => {
             const [loading, setLoading] = useState(false);
             const [voted, setVoted] = useState(() => localStorage.getItem(`voted_${event.id}`) === 'true');
@@ -149,28 +134,18 @@
         };
 
         const ButtonBuilder = ({ buttons, onChange }) => {
-            const addBtn = () => onChange([...(buttons || []), { id: Date.now(), label: 'Botón', link: '', style: 'primary', type: 'link', customFields: [] }]);
+            const addBtn = () => onChange([...(buttons || []), { id: Date.now(), label: 'Botón', link: '', style: 'primary' }]);
             const updateBtn = (id, k, v) => onChange(buttons.map(b => b.id === id ? { ...b, [k]: v } : b));
             const removeBtn = (id) => onChange(buttons.filter(b => b.id !== id));
             return (
                 <div className="space-y-3 bg-black/20 p-3 rounded border border-white/10">
                     <div className="flex justify-between items-center"><label className="text-sm font-bold text-gray-400">Botones de Acción</label><button type="button" onClick={addBtn} className="text-xs bg-celestial text-black px-2 py-1 rounded font-bold">+ Añadir</button></div>
                     {(buttons || []).map(b => (
-                        <div key={b.id} className="bg-white/5 p-2 rounded relative">
-                            <button type="button" onClick={() => removeBtn(b.id)} className="absolute top-2 right-2 text-red-500"><X className="w-4 h-4" /></button>
-                            <div className="grid grid-cols-2 gap-2 mb-2 pr-6">
-                                <input value={b.label} onChange={e => updateBtn(b.id, 'label', e.target.value)} placeholder="Texto del Botón" className="bg-black/40 p-2 rounded text-sm w-full" />
-                                <select value={b.type || 'link'} onChange={e => updateBtn(b.id, 'type', e.target.value)} className="bg-black/40 p-2 rounded text-sm w-full"><option value="link">Enlace</option><option value="form">Formulario</option></select>
-                            </div>
-                            <div className="mb-2">
-                                <select value={b.style} onChange={e => updateBtn(b.id, 'style', e.target.value)} className="w-full bg-black/40 p-2 rounded text-sm"><option value="primary">Azul (Principal)</option><option value="secondary">Blanco (Secundario)</option><option value="outline">Borde (Discreto)</option><option value="gradient">Gradiente (Destacado)</option></select>
-                            </div>
-                            {b.type === 'link' && <input value={b.link} onChange={e => updateBtn(b.id, 'link', e.target.value)} placeholder="https://..." className="w-full bg-black/40 p-2 rounded text-sm" />}
-                            {b.type === 'form' && (
-                                <div className="mt-2 pl-2 border-l-2 border-celestial/30">
-                                    <CustomFormBuilder fields={b.customFields || []} onChange={f => updateBtn(b.id, 'customFields', f)} />
-                                </div>
-                            )}
+                        <div key={b.id} className="grid grid-cols-12 gap-2 bg-white/5 p-2 rounded items-center">
+                            <input value={b.label} onChange={e => updateBtn(b.id, 'label', e.target.value)} placeholder="Texto" className="col-span-4 bg-black/40 p-2 rounded text-sm" />
+                            <input value={b.link} onChange={e => updateBtn(b.id, 'link', e.target.value)} placeholder="Link / #id" className="col-span-4 bg-black/40 p-2 rounded text-sm" />
+                            <select value={b.style} onChange={e => updateBtn(b.id, 'style', e.target.value)} className="col-span-3 bg-black/40 p-2 rounded text-sm"><option value="primary">Azul (Principal)</option><option value="secondary">Blanco (Secundario)</option><option value="outline">Borde (Discreto)</option><option value="gradient">Gradiente (Destacado)</option></select>
+                            <button type="button" onClick={() => removeBtn(b.id)} className="col-span-1 text-red-500 flex justify-center"><X className="w-4 h-4" /></button>
                         </div>
                     ))}
                     {(!buttons || buttons.length === 0) && <p className="text-xs text-center text-gray-600">Sin botones.</p>}
@@ -193,15 +168,10 @@
 
         const CustomFormBuilder = ({ fields, onChange }) => {
             const addField = () => onChange([...fields, { id: Date.now(), label: '', type: 'text', options: '' }]);
-            const addPreset = () => onChange([...fields,
-            { id: Date.now(), label: 'Nombre Completo', type: 'text', options: '' },
-            { id: Date.now() + 1, label: 'Email', type: 'text', options: '' },
-            { id: Date.now() + 2, label: 'Comentarios', type: 'text', options: '' }
-            ]);
             const updateField = (id, k, v) => onChange(fields.map(f => f.id === id ? { ...f, [k]: v } : f));
             return (
                 <div className="space-y-4 border border-white/10 p-4 rounded bg-black/20">
-                    <div className="flex justify-between items-center"><h4 className="font-bold text-sm uppercase text-gray-400">Campos del Formulario</h4><div className="flex gap-2"><button type="button" onClick={addPreset} className="text-xs bg-white/10 px-2 py-1 rounded hover:bg-white/20">+ Presets</button><button type="button" onClick={addField} className="text-celestial text-sm font-bold flex items-center gap-1"><Plus className="w-4 h-4" /> Añadir Campo</button></div></div>
+                    <div className="flex justify-between items-center"><h4 className="font-bold text-sm uppercase text-gray-400">Campos del Formulario</h4><button type="button" onClick={addField} className="text-celestial text-sm font-bold flex items-center gap-1"><Plus className="w-4 h-4" /> Añadir Campo</button></div>
                     {fields.map(f => (
                         <div key={f.id} className="grid grid-cols-12 gap-2 items-center bg-white/5 p-2 rounded">
                             <input value={f.label} onChange={e => updateField(f.id, 'label', e.target.value)} placeholder="Etiqueta" className="col-span-4 bg-black/40 p-2 rounded text-sm" />
@@ -215,7 +185,7 @@
             );
         };
 
-        const AdminDashboard = ({ isOpen, onClose, events, eventTypes, onSaveEvent, onDeleteEvent, onAddEventType, onDeleteEventType, specialSections, onUpdateSpecialSections, onOpenDB }) => {
+        const AdminDashboard = ({ isOpen, onClose, events, eventTypes, onSaveEvent, onDeleteEvent, onAddEventType, onDeleteEventType, specialSections, onUpdateSpecialSections }) => {
             const [tab, setTab] = useState('events');
             const INITIAL_FORM = { title: '', date: '', time: '', location: '', typeId: 'party', description: '', imageUrl: '', actionType: 'none', actionLabel: '', actionLink: '', customFields: [], showSurveyCount: false, pollOptions: [] };
             const [formData, setFormData] = useState(INITIAL_FORM);
@@ -226,7 +196,7 @@
             return (
                 <Modal isOpen={isOpen} onClose={onClose} size="xl">
                     <div className="p-8">
-                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold">Panel Admin</h2><div className="flex gap-4"><button onClick={onOpenDB} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-500">Ver Base de Datos</button><div className="flex bg-black/40 p-1 rounded-lg">{[{ id: 'events', l: 'Eventos' }, { id: 'types', l: 'Tipos' }, { id: 'special', l: 'Secciones' }].map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-md font-bold text-sm ${tab === t.id ? 'bg-celestial text-black' : 'text-gray-400'}`}>{t.l}</button>)}</div></div></div>
+                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold">Panel Admin</h2><div className="flex bg-black/40 p-1 rounded-lg">{[{ id: 'events', l: 'Eventos' }, { id: 'types', l: 'Tipos' }, { id: 'special', l: 'Secciones' }].map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-md font-bold text-sm ${tab === t.id ? 'bg-celestial text-black' : 'text-gray-400'}`}>{t.l}</button>)}</div></div>
                         {tab === 'events' && (
                             <div className="grid lg:grid-cols-2 gap-8">
                                 <form onSubmit={e => { e.preventDefault(); onSaveEvent(formData, editingId); setFormData(INITIAL_FORM); setEditingId(null); }} className="space-y-4">
@@ -240,15 +210,11 @@
                                         {formData.actionType === 'poll' && <div className="bg-black/30 p-2 rounded mb-3 space-y-2"><label className="text-sm font-bold text-gray-400">Opciones</label>{(formData.pollOptions || []).map((opt, i) => <div key={i} className="flex gap-2"><input value={opt} onChange={e => { const u = [...formData.pollOptions]; u[i] = e.target.value; setFormData({ ...formData, pollOptions: u }) }} className="w-full bg-black/40 p-2 rounded" /><button type="button" onClick={() => setFormData({ ...formData, pollOptions: formData.pollOptions.filter((_, idx) => idx !== i) })} className="text-red-500">X</button></div>)}<button type="button" onClick={() => setFormData({ ...formData, pollOptions: [...(formData.pollOptions || []), ''] })} className="text-xs bg-white/10 px-2 py-1 rounded">+ Opción</button></div>}</div>
                                     <button className="w-full bg-celestial text-black py-3 rounded font-bold">{editingId ? 'Guardar Cambios' : 'Crear Evento'}</button>
                                 </form>
-                                <div className="space-y-2 max-h-[600px] overflow-y-auto">{events.map(e => <div key={e.id} className="flex justify-between items-center bg-white/5 p-3 rounded group hover:bg-white/10"><div><div className="font-bold">{e.title}</div><div className="text-xs text-gray-400">{e.date}</div></div><div className="flex gap-1 opacity-0 group-hover:opacity-100"><button onClick={() => onOpenStats(e)} className="text-green-500 p-2 text-xs border border-green-500 rounded">DATA</button><button onClick={() => { setFormData({ ...e }); setEditingId(e.id); }} className="text-celestial p-2"><Edit className="w-4 h-4" /></button><button onClick={() => onDeleteEvent(e.id)} className="text-red-500 p-2"><Trash className="w-4 h-4" /></button></div></div>)}</div>
+                                <div className="space-y-2 max-h-[600px] overflow-y-auto">{events.map(e => <div key={e.id} className="flex justify-between items-center bg-white/5 p-3 rounded group hover:bg-white/10"><div><div className="font-bold">{e.title}</div><div className="text-xs text-gray-400">{e.date}</div></div><div className="flex gap-1 opacity-0 group-hover:opacity-100"><button onClick={() => { setFormData({ ...e }); setEditingId(e.id); }} className="text-celestial p-2"><Edit className="w-4 h-4" /></button><button onClick={() => onDeleteEvent(e.id)} className="text-red-500 p-2"><Trash className="w-4 h-4" /></button></div></div>)}</div>
                             </div>
                         )}
                         {tab === 'types' && (<div className="grid grid-cols-4 gap-4"><input value={newType.name} onChange={e => setNewType({ ...newType, name: e.target.value })} placeholder="Nombre" className="col-span-2 bg-black/40 p-3 rounded" /><input value={newType.color} onChange={e => setNewType({ ...newType, color: e.target.value })} type="color" className="bg-black/40 p-2 h-full w-full rounded" /><input value={newType.icon} onChange={e => setNewType({ ...newType, icon: e.target.value })} placeholder="Emoji" className="bg-black/40 p-3 rounded text-center" /><button onClick={() => { onAddEventType({ ...newType, id: Date.now().toString() }); setNewType({ name: '', color: '#38bdf8', icon: '📌' }); }} className="col-span-4 bg-white/10 py-3 rounded font-bold">Añadir Tipo</button><div className="col-span-4 grid md:grid-cols-3 gap-4">{eventTypes.map(t => <div key={t.id} className="flex items-center justify-between p-4 rounded bg-[#0a0a0f] border border-white/10" style={{ borderLeft: `4px solid ${t.color}` }}><span>{t.icon} {t.name}</span>{!['party', 'tournament', 'tickets', 'special'].includes(t.id) && <button onClick={() => onDeleteEventType(t.id)} className="text-red-500"><Trash className="w-4 h-4" /></button>}</div>)}</div></div>)}
-                        {tab === 'special' && (<div className="space-y-6"><div className="flex justify-between"><h3 className="font-bold">Secciones</h3><button onClick={() => safeUpdateSection([...specialSections, { id: Date.now(), title: '', description: '', imageUrl: '', active: true, buttons: [], startDate: '', endDate: '', warningDays: '', link: '', linkText: '', pollOptions: [] }])} className="bg-white/10 px-4 py-2 rounded">+ Nueva</button></div>{specialSections.map(s => (<div key={s.id} className="bg-white/5 p-4 rounded border border-white/10 space-y-3 relative"><div className="flex justify-between"><label className="flex gap-2 font-bold"><input type="checkbox" checked={s.active} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, active: e.target.checked } : x))} /> Visible</label><button onClick={() => safeUpdateSection(specialSections.filter(x => x.id !== s.id))} className="text-red-400 text-xs">ELIMINAR</button></div><input value={s.title} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} placeholder="Título" className="w-full bg-black/40 p-2 rounded" /><textarea value={s.description} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, description: e.target.value } : x))} placeholder="Descripción..." className="w-full bg-black/40 p-2 rounded" rows="2" /><div className="grid grid-cols-3 gap-2"><div className="space-y-1"><label className="text-xs text-gray-400">Fecha Inicio</label><input type="date" value={s.startDate || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, startDate: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div><div className="space-y-1"><label className="text-xs text-gray-400">Fecha Fin</label><input type="date" value={s.endDate || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, endDate: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div><div className="space-y-1"><label className="text-xs text-gray-400">Días Aviso</label><input type="number" placeholder="Ej: 5" value={s.warningDays || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, warningDays: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div></div>
-                            <div className="grid grid-cols-2 gap-2"><input value={s.link || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, link: e.target.value } : x))} placeholder="Enlace Principal (Opcional)" className="bg-black/40 p-2 rounded text-sm" /><input value={s.linkText || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, linkText: e.target.value } : x))} placeholder="Texto Enlace (ej: Ver Más)" className="bg-black/40 p-2 rounded text-sm" /></div>
-                            <ImageUploader value={s.imageUrl} onChange={v => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, imageUrl: v } : x))} />
-                            <div className="bg-black/20 p-3 rounded"><label className="text-xs font-bold text-gray-400">Opciones para Votación (Poll)</label>{(s.pollOptions || []).map((opt, i) => <div key={i} className="flex gap-2 mt-1"><input value={opt} onChange={e => { const u = [...(s.pollOptions || [])]; u[i] = e.target.value; safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: u } : x)) }} className="w-full bg-black/40 p-1 rounded text-sm" /><button onClick={() => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: s.pollOptions.filter((_, idx) => idx !== i) } : x))} className="text-red-500">X</button></div>)}<button onClick={() => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: [...(s.pollOptions || []), ''] } : x))} className="text-xs mt-1 bg-white/10 px-2 py-1 rounded">+ Opción</button></div>
-                            <ButtonBuilder buttons={s.buttons || []} onChange={btns => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, buttons: btns } : x))} /></div>))}<button onClick={() => { window.setDoc(window.doc(window.db, 'config', 'specialSections'), { sections: specialSections }); alert('Guardado'); }} className="w-full bg-celestial text-black py-3 rounded font-bold">GUARDAR CAMBIOS</button></div>)}
+                        {tab === 'special' && (<div className="space-y-6"><div className="flex justify-between"><h3 className="font-bold">Secciones</h3><button onClick={() => safeUpdateSection([...specialSections, { id: Date.now(), title: '', description: '', imageUrl: '', active: true, buttons: [], startDate: '', endDate: '', warningDays: '' }])} className="bg-white/10 px-4 py-2 rounded">+ Nueva</button></div>{specialSections.map(s => (<div key={s.id} className="bg-white/5 p-4 rounded border border-white/10 space-y-3 relative"><div className="flex justify-between"><label className="flex gap-2 font-bold"><input type="checkbox" checked={s.active} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, active: e.target.checked } : x))} /> Visible</label><button onClick={() => safeUpdateSection(specialSections.filter(x => x.id !== s.id))} className="text-red-400 text-xs">ELIMINAR</button></div><input value={s.title} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, title: e.target.value } : x))} placeholder="Título" className="w-full bg-black/40 p-2 rounded" /><textarea value={s.description} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, description: e.target.value } : x))} placeholder="Descripción..." className="w-full bg-black/40 p-2 rounded" rows="2" /><div className="grid grid-cols-3 gap-2"><div className="space-y-1"><label className="text-xs text-gray-400">Fecha Inicio</label><input type="date" value={s.startDate || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, startDate: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div><div className="space-y-1"><label className="text-xs text-gray-400">Fecha Fin</label><input type="date" value={s.endDate || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, endDate: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div><div className="space-y-1"><label className="text-xs text-gray-400">Días Aviso</label><input type="number" placeholder="Ej: 5" value={s.warningDays || ''} onChange={e => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, warningDays: e.target.value } : x))} className="w-full bg-black/40 p-2 rounded text-xs" /></div></div><ImageUploader value={s.imageUrl} onChange={v => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, imageUrl: v } : x))} /><ButtonBuilder buttons={s.buttons || []} onChange={btns => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, buttons: btns } : x))} /></div>))}<button onClick={() => { window.setDoc(window.doc(window.db, 'config', 'specialSections'), { sections: specialSections }); alert('Guardado'); }} className="w-full bg-celestial text-black py-3 rounded font-bold">GUARDAR CAMBIOS</button></div>)}
                     </div>
                 </Modal>
             );
@@ -256,148 +222,14 @@
 
         const AdminLogin = ({ onClose, onSuccess }) => {
             const [pass, setPass] = useState('');
-            const [loading, setLoading] = useState(false);
-            const handleLogin = async (e) => {
-                e.preventDefault();
-                setLoading(true);
-                try {
-                    const docRef = window.doc(window.db, 'config', 'settings');
-                    const docSnap = await window.getDoc(docRef);
-                    let correctPass = 'PasoWeb2526';
-                    if (docSnap.exists()) {
-                        correctPass = docSnap.data().adminPassword || 'PasoWeb2526';
-                    } else {
-                        // First run: Create secure password doc
-                        await window.setDoc(docRef, { adminPassword: 'PasoWeb2526' });
-                    }
-
-                    if (pass === correctPass) {
-                        onSuccess();
-                    } else {
-                        alert('Contraseña incorrecta');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error de verificación');
-                } finally {
-                    setLoading(false);
-                }
-            };
-            return <Modal isOpen={true} onClose={onClose}><div className="p-8 text-center"><h2 className="text-2xl font-bold mb-4">Acceso Admin</h2><form onSubmit={handleLogin}><input type="password" autoFocus className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-center text-white text-xl tracking-widest mb-4 placeholder-gray-600" placeholder="••••" value={pass} onChange={e => setPass(e.target.value)} /><div className="flex gap-2 justify-center"><button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">Cancelar</button><button disabled={loading} className="px-6 py-2 bg-celestial text-black font-bold rounded-lg hover:opacity-90">{loading ? '...' : 'Entrar'}</button></div></form></div></Modal>;
-        };
-
-        const DatabaseView = ({ onBack, events, specialSections }) => {
-            const [selectedId, setSelectedId] = useState(null);
-            const [registrations, setRegistrations] = useState([]);
-
-            // Unified items list: Events + Sections (that have Polls or Form Buttons)
-            const items = useMemo(() => {
-                const evts = (events || []).map(e => ({ ...e, type: 'event', label: 'Evento' }));
-                const sects = (specialSections || []).filter(s => ((s.buttons || []).some(b => b.type === 'form')) || ((s.pollOptions || []).length > 0))
-                    .map(s => ({ ...s, type: 'section', label: 'Sección' }));
-                return [...evts, ...sects];
-            }, [events, specialSections]);
-
-            const selectedItem = items.find(i => i.id === selectedId);
-
-            useEffect(() => {
-                if (!selectedId || !selectedItem) return;
-                let u;
-                if (selectedItem.type === 'event') {
-                    u = window.onSnapshot(window.query(window.collection(window.db, "event_registrations"), window.where("eventId", "==", selectedId)), s => setRegistrations(s.docs.map(d => d.data())));
-                } else {
-                    // Startswith query simulation for sections
-                    u = window.onSnapshot(window.query(window.collection(window.db, "event_registrations"), window.where("eventId", ">=", `section_${selectedId}`), window.where("eventId", "<=", `section_${selectedId}\uf8ff`)), s => setRegistrations(s.docs.map(d => d.data())));
-                }
-                return () => u && u();
-            }, [selectedId, selectedItem]);
-
-            const exportToCSV = () => {
-                if (!selectedItem) return;
-                const headers = ["ID Origen", "Nombre", "Email", ...Object.keys(registrations[0] || {}).filter(k => !['eventId', 'eventTitle', 'submittedAt', 'nombre', 'email'].includes(k)), "Fecha"];
-                const rows = registrations.map(r => [r.eventTitle || '-', r.nombre || '-', r.email || '-', ...Object.keys(r).filter(k => !['eventId', 'eventTitle', 'submittedAt', 'nombre', 'email'].includes(k)).map(k => r[k]), r.submittedAt].join("\t"));
-                const csv = [headers.join("\t"), ...rows].join("\n");
-                const blob = new Blob([csv], { type: 'text/tab-separated-values' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `${selectedItem.title}_data.xls`; a.click();
-            };
-
-            return (
-                <div className="min-h-screen bg-[#0a0a0f] text-white p-8 flex flex-col">
-                    <div className="flex justify-between items-center mb-8 pb-4 border-b border-white/10">
-                        <h1 className="text-3xl font-black text-celestial">BASE DE DATOS</h1>
-                        <button onClick={onBack} className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg font-bold">Volver</button>
-                    </div>
-                    <div className="flex gap-8 flex-1 overflow-hidden">
-                        <div className="w-1/4 overflow-y-auto pr-4 border-r border-white/10 space-y-2">
-                            <h3 className="font-bold text-gray-400 mb-4 sticky top-0 bg-[#0a0a0f] py-2">Ítems</h3>
-                            {items.map(e => (
-                                <button key={e.id} onClick={() => setSelectedId(e.id)} className={`w-full text-left p-3 rounded transition-colors flex justify-between items-center ${selectedId === e.id ? 'bg-celestial text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}>
-                                    <span className="truncate">{e.title}</span>
-                                    <span className="text-[10px] opacity-70 border px-1 rounded uppercase">{e.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex-1 overflow-y-auto bg-black/20 rounded-2xl p-6 border border-white/5">
-                            {!selectedId && <div className="h-full flex items-center justify-center text-gray-500 italic">Selecciona un ítem de la izquierda.</div>}
-                            {/* ErrorBoundary removed */}
-                            {selectedItem && (
-                                <div>
-                                    <div className="flex justify-between items-end mb-6">
-                                        <div><h2 className="text-4xl font-bold mb-2">{selectedItem.title}</h2><div className="text-gray-400 text-sm">ID: {selectedItem.id}</div></div>
-                                        <button onClick={exportToCSV} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded font-bold text-sm flex items-center gap-2"><Upload className="w-4 h-4 rotate-180" /> Exportar Excel</button>
-                                    </div>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                                        <div className="bg-white/5 p-4 rounded border border-white/10"><div className="text-sm text-gray-400">Tipo</div><div className="text-2xl font-bold text-celestial uppercase">{selectedItem.type}</div></div>
-                                        <div className="bg-white/5 p-4 rounded border border-white/10"><div className="text-sm text-gray-400">Registros</div><div className="text-2xl font-bold text-purple-400">{registrations.length}</div></div>
-                                    </div>
-
-                                    {/* Poll Results for Sections (Local only for now unless persisted separately, but we show structure) or Events */}
-                                    {(selectedItem.pollCounts || (selectedItem.pollOptions && selectedItem.pollOptions.length > 0)) && (
-                                        <div className="mb-8 p-4 bg-white/5 rounded border border-white/10">
-                                            <h3 className="font-bold mb-4 text-celestial">Opciones / Votos</h3>
-                                            {selectedItem.pollCounts ? (
-                                                <div className="space-y-2">{Object.entries(selectedItem.pollCounts).map(([k, v]) => <div key={k} className="flex justify-between p-2 bg-black/20 rounded"><span>{k}</span><span className="font-bold">{v}</span></div>)}</div>
-                                            ) : (
-                                                <p className="text-sm text-gray-500">Los votos de secciones se guardan localmente en los dispositivos de los usuarios por ahora. (No centralizado)</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <h3 className="font-bold mb-4 text-celestial">Registros Recibidos</h3>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm text-left text-gray-400">
-                                            <thead className="text-xs uppercase bg-white/5 text-gray-200"><tr>{["Origen", "Fecha", "Nombre", "Email", ...Object.keys(registrations[0] || {}).filter(k => !['eventId', 'eventTitle', 'submittedAt', 'nombre', 'email'].includes(k))].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr></thead>
-                                            <tbody>
-                                                {registrations.map((r, i) => (
-                                                    <tr key={i} className="border-b border-white/5 hover:bg-white/5">
-                                                        <td className="px-4 py-2 text-xs text-gray-500">{r.eventTitle?.split('-')[1] || 'General'}</td>
-                                                        <td className="px-4 py-2">{new Date(r.submittedAt).toLocaleDateString()}</td>
-                                                        <td className="px-4 py-2 font-bold text-white">{r.nombre || '-'}</td>
-                                                        <td className="px-4 py-2">{r.email || '-'}</td>
-                                                        {Object.keys(r).filter(k => !['eventId', 'eventTitle', 'submittedAt', 'nombre', 'email'].includes(k)).map(k => <td key={k} className="px-4 py-2">{typeof r[k] === 'object' ? JSON.stringify(r[k]) : r[k]}</td>)}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                        {registrations.length === 0 && <p className="text-center py-8 italic text-gray-600">No hay registros aún.</p>}
-                                    </div>
-                                </div>
-
-                            )}
-                            {/* </ErrorBoundary> removed */}
-                        </div>
-                    </div >
-                </div >
-            );
+            const handleLogin = (e) => { e.preventDefault(); if (pass === (localStorage.getItem('liga_password') || '4321')) onSuccess(); else alert('Contraseña incorrecta'); };
+            return <Modal isOpen={true} onClose={onClose}><div className="p-8 text-center"><h2 className="text-2xl font-bold mb-4">Acceso Admin</h2><form onSubmit={handleLogin}><input type="password" autoFocus className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-center text-white text-xl tracking-widest mb-4 placeholder-gray-600" placeholder="••••" value={pass} onChange={e => setPass(e.target.value)} /><div className="flex gap-2 justify-center"><button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">Cancelar</button><button className="px-6 py-2 bg-celestial text-black font-bold rounded-lg hover:opacity-90">Entrar</button></div></form></div></Modal>;
         };
 
         const EventRegistrationModal = ({ event, onClose }) => {
             const [formData, setFormData] = useState({});
             const handleSubmit = async (e) => { e.preventDefault(); try { await window.addDoc(window.collection(window.db, "event_registrations"), { eventId: event.id, eventTitle: event.title, submittedAt: new Date().toISOString(), ...formData }); alert('¡Inscripción Enviada!'); onClose(); } catch (err) { alert('Error al enviar.'); } };
-            return <Modal isOpen={true} onClose={onClose}><div className="p-8"><h2 className="text-2xl font-bold mb-4">Inscripción: {event.title}</h2><form onSubmit={handleSubmit} className="space-y-4">
-                {event.customFields?.map(f => (<div key={f.id}><label className="block text-sm font-bold text-gray-400 mb-1">{f.label}</label>{f.type === 'select' ? <select required className="w-full bg-black/40 p-3 rounded" onChange={e => setFormData({ ...formData, [f.label]: e.target.value })}><option value="">Selecciona...</option>{f.options.split(',').map(o => <option key={o} value={o.trim()}>{o.trim()}</option>)}</select> : <input required type={f.type} className="w-full bg-black/40 p-3 rounded" onChange={e => setFormData({ ...formData, [f.label]: e.target.value })} />}</div>))}
-                <button className="w-full bg-celestial text-black font-bold py-3 rounded mt-4 hover:bg-celestialDark transition-colors">Confirmar Inscripción</button></form></div></Modal>;
+            return <Modal isOpen={true} onClose={onClose}><div className="p-8"><h2 className="text-2xl font-bold mb-4">Inscripción: {event.title}</h2><form onSubmit={handleSubmit} className="space-y-4">{event.customFields?.map(f => (<div key={f.id}><label className="block text-sm font-bold text-gray-400 mb-1">{f.label}</label>{f.type === 'select' ? <select required className="w-full bg-black/40 p-3 rounded" onChange={e => setFormData({ ...formData, [f.label]: e.target.value })}><option value="">Selecciona...</option>{f.options.split(',').map(o => <option key={o} value={o.trim()}>{o.trim()}</option>)}</select> : <input required type={f.type} className="w-full bg-black/40 p-3 rounded" onChange={e => setFormData({ ...formData, [f.label]: e.target.value })} />}</div>))}<button className="w-full bg-celestial text-black font-bold py-3 rounded mt-4 hover:bg-celestialDark transition-colors">Confirmar Inscripción</button></form></div></Modal>;
         };
 
         const renderButtonStyle = (b) => {
@@ -418,110 +250,29 @@
             </Modal>
         );
 
-        const SectionDetailModal = ({ section, onClose, onOpenForm }) => {
-            // Reusing ActionButton logic but for Sections (Polling needing dummy event structure)
-            const SectionPoll = ({ options, id }) => {
-                const [voted, setVoted] = useState(() => localStorage.getItem(`section_poll_${id}`));
-                const [loading, setLoading] = useState(false);
-
-                const handleVote = async (opt) => {
-                    if (loading) return;
-                    setLoading(true);
-                    try {
-                        const docRef = window.doc(window.db, 'config', 'specialSections');
-                        const docSnap = await window.getDoc(docRef);
-
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            const sections = data.sections || [];
-                            const sectionIdx = sections.findIndex(s => s.id === id);
-
-                            if (sectionIdx !== -1) {
-                                const section = sections[sectionIdx];
-                                const counts = section.pollCounts || {};
-
-                                // Local check for optimization (UI update)
-                                if (voted === opt) {
-                                    counts[opt] = Math.max(0, (counts[opt] || 0) - 1);
-                                    localStorage.removeItem(`section_poll_${id}`);
-                                    setVoted(null);
-                                } else {
-                                    if (voted) {
-                                        counts[voted] = Math.max(0, (counts[voted] || 0) - 1);
-                                    }
-                                    counts[opt] = (counts[opt] || 0) + 1;
-                                    localStorage.setItem(`section_poll_${id}`, opt);
-                                    setVoted(opt);
-                                }
-
-                                sections[sectionIdx] = { ...section, pollCounts: counts };
-                                await window.updateDoc(docRef, { sections });
-                            }
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('Error al guardar voto');
-                    } finally {
-                        setLoading(false);
-                    }
-                };
-                return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 w-full">
-                        {options.map(opt => (
-                            <button key={opt} onClick={(e) => { e.stopPropagation(); handleVote(opt); }} disabled={loading} className={`p-4 rounded-xl font-bold border transition-all flex items-center justify-between group ${voted === opt ? 'bg-celestial text-black border-celestial shadow-[0_0_15px_rgba(56,189,248,0.3)]' : 'bg-white/5 border-white/10 hover:bg-white/10'} ${loading ? 'opacity-50' : ''}`}>
-                                <span>{opt}</span>
-                                {voted === opt && <Checks className="w-5 h-5" />}
-                            </button>
-                        ))}
-                    </div>
-                );
-            };
-
-            return (
-                <Modal isOpen={true} onClose={onClose} size="lg">
-                    <div className="relative">
-                        {section.imageUrl && <div className="w-full h-64 md:h-80"><img src={section.imageUrl} className="w-full h-full object-cover" /></div>}
-                        <div className="p-8">
-                            <h2 className="text-4xl font-black mb-4 text-white">{section.title}</h2>
-                            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-6"><p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{section.description}</p></div>
-
-                            {/* Section Polls */}
-                            {section.pollOptions && section.pollOptions.length > 0 && (
-                                <div className="mb-6 p-4 bg-white/5 rounded border border-white/10">
-                                    <h3 className="font-bold text-celestial mb-2">Votación</h3>
-                                    <SectionPoll options={section.pollOptions} id={section.id} />
-                                </div>
-                            )}
-
-                            <div className="flex flex-col gap-3">
-                                {section.buttons?.map(b => {
-                                    const click = (e) => {
-                                        e.stopPropagation();
-                                        if (b.type === 'form') {
-                                            onOpenForm({ id: `section_${section.id}_${b.id}`, title: `${section.title} - ${b.label}`, customFields: b.customFields || [] });
-                                        } else if (b.type === 'vote') {
-                                            // Legacy vote button
-                                        } else {
-                                            if (b.link) window.open(b.link, '_blank');
-                                        }
-                                    };
-                                    return <button key={b.id} onClick={click} className={renderButtonStyle(b) + " justify-center w-full"}>{b.label} {b.type === 'link' && <ExternalLink className="w-5 h-5" />}</button>
-                                })}
-                                {!section.buttons?.length && section.link && <a href={section.link} target="_blank" className="w-full py-3 rounded-xl bg-celestial text-black font-bold flex items-center justify-center gap-2 hover:bg-celestialDark">{section.linkText || 'Ver Más'} <ExternalLink className="w-5 h-5" /></a>}
-                            </div>
+        const SectionDetailModal = ({ section, onClose }) => (
+            <Modal isOpen={true} onClose={onClose} size="lg">
+                <div className="relative">
+                    {section.imageUrl && <div className="w-full h-64 md:h-80"><img src={section.imageUrl} className="w-full h-full object-cover" /></div>}
+                    <div className="p-8">
+                        <h2 className="text-4xl font-black mb-4 text-white">{section.title}</h2>
+                        <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-6"><p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{section.description}</p></div>
+                        <div className="flex flex-col gap-3">
+                            {/* Rendering dynamic buttons */}
+                            {section.buttons?.map(b => <a key={b.id} href={b.link} target="_blank" className={renderButtonStyle(b) + " justify-center w-full"}>{b.label} <ExternalLink className="w-5 h-5" /></a>)}
+                            {/* Fallback legacy links */}
+                            {!section.buttons?.length && section.link && <a href={section.link} target="_blank" className="w-full py-3 rounded-xl bg-celestial text-black font-bold flex items-center justify-center gap-2 hover:bg-celestialDark">{section.linkText || 'Ver Más'} <ExternalLink className="w-5 h-5" /></a>}
                         </div>
                     </div>
-                </Modal>
-            );
-        };
+                </div>
+            </Modal>
+        );
 
         function App() {
-            const [view, setView] = useState('app'); // 'app' | 'database'
             const [isAdmin, setIsAdmin] = useState(false);
             const [showLogin, setShowLogin] = useState(false);
             const [showAdminPanel, setShowAdminPanel] = useState(false);
             const [regFormEvent, setRegFormEvent] = useState(null);
-            const [statsEvent, setStatsEvent] = useState(null);
             const [expandedEvent, setExpandedEvent] = useState(null);
             const [expandedSection, setExpandedSection] = useState(null);
             const [events, setEvents] = useState([]);
@@ -555,8 +306,6 @@
                 setSelectedDay({ date: dateStr, events: events.filter(e => e.date === dateStr), holiday: HOLIDAYS.find(h => h.date === dateStr) });
             };
 
-            if (view === 'database') return <ErrorBoundary><DatabaseView events={events} specialSections={specialSections} onBack={() => setView('app')} /></ErrorBoundary>;
-
             return (
                 <div className="min-h-screen flex flex-col relative font-sans">
                     {/* Modals Order Fixed: Calendar (Bottom) -> Sections -> Events -> Admin (Top) */}
@@ -568,13 +317,11 @@
                             </div>
                         </Modal>
                     )}
-                    {expandedSection && <SectionDetailModal section={expandedSection} onClose={() => setExpandedSection(null)} onOpenForm={(e) => { setExpandedSection(null); setRegFormEvent(e); }} />}
+                    {expandedSection && <SectionDetailModal section={expandedSection} onClose={() => setExpandedSection(null)} />}
                     {expandedEvent && <EventDetailModal event={expandedEvent} onClose={() => setExpandedEvent(null)} onOpenForm={(e) => { setExpandedEvent(null); setRegFormEvent(e); }} />}
                     {regFormEvent && <EventRegistrationModal event={regFormEvent} onClose={() => setRegFormEvent(null)} />}
-                    {statsEvent && <EventStatsModal event={statsEvent} onClose={() => setStatsEvent(null)} />}
                     {showLogin && <AdminLogin onClose={() => setShowLogin(false)} onSuccess={() => { setIsAdmin(true); setShowLogin(false); setShowAdminPanel(true); }} />}
-                    {showAdminPanel && <AdminDashboard isOpen={true} onClose={() => setShowAdminPanel(false)} events={events} eventTypes={eventTypes} onOpenDB={() => { setShowAdminPanel(false); setView('database'); }} onSaveEvent={async (data, id) => { const et = eventTypes.find(t => t.id === data.typeId); const ed = { ...data, typeColor: et?.color || '#38bdf8', typeIcon: et?.icon || '📌', typeName: et?.name || 'Evento' }; if (id) await window.updateDoc(window.doc(window.db, "events", id), ed); else await window.addDoc(window.collection(window.db, "events"), { ...ed, surveyCount: 0 }); alert('Guardado'); }} onDeleteEvent={id => confirm('¿Eliminar?') && window.deleteDoc(window.doc(window.db, "events", id))} onAddEventType={t => { const u = [...eventTypes, t]; setEventTypes(u); window.setDoc(window.doc(window.db, "config", "eventTypes"), { types: u }) }} onDeleteEventType={id => { const u = eventTypes.filter(t => t.id !== id); setEventTypes(u); window.setDoc(window.doc(window.db, "config", "eventTypes"), { types: u }) }} specialSections={specialSections} onUpdateSpecialSections={setSpecialSections} />}
-                    {showAdminPanel && <div className="fixed top-0 left-0 hidden"></div> /* Hack to access stats inside dashboard context if needed, but we pass setStatsEvent via props currently? No, we need to modify AdminDashboard to accept onOpenStats */}
+                    {showAdminPanel && <AdminDashboard isOpen={true} onClose={() => setShowAdminPanel(false)} events={events} eventTypes={eventTypes} onSaveEvent={async (data, id) => { const et = eventTypes.find(t => t.id === data.typeId); const ed = { ...data, typeColor: et?.color || '#38bdf8', typeIcon: et?.icon || '📌', typeName: et?.name || 'Evento' }; if (id) await window.updateDoc(window.doc(window.db, "events", id), ed); else await window.addDoc(window.collection(window.db, "events"), { ...ed, surveyCount: 0 }); alert('Guardado'); }} onDeleteEvent={id => confirm('¿Eliminar?') && window.deleteDoc(window.doc(window.db, "events", id))} onAddEventType={t => { const u = [...eventTypes, t]; setEventTypes(u); window.setDoc(window.doc(window.db, "config", "eventTypes"), { types: u }) }} onDeleteEventType={id => { const u = eventTypes.filter(t => t.id !== id); setEventTypes(u); window.setDoc(window.doc(window.db, "config", "eventTypes"), { types: u }) }} specialSections={specialSections} onUpdateSpecialSections={setSpecialSections} />}
 
                     <div className="fixed top-4 right-4 z-50 flex gap-2">
                         {isAdmin && <button onClick={() => setShowAdminPanel(true)} className="p-3 bg-celestial text-black rounded-full shadow-lg hover:bg-celestialDark transition-colors"><Settings className="w-5 h-5" /></button>}
@@ -609,16 +356,7 @@
                                         <p className="text-lg text-gray-300 mb-6 whitespace-pre-line line-clamp-3">{s.description}</p>
                                         <div className="flex flex-wrap gap-4">
                                             <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold bg-celestial text-black hover:bg-celestialDark transition-colors">Ver Completo <ExternalLink className="w-5 h-5" /></button>
-                                            {(s.buttons || []).map(b => (
-                                                <button key={b.id} className={renderButtonStyle(b)} onClick={e => {
-                                                    e.stopPropagation();
-                                                    if (b.type === 'form') {
-                                                        setRegFormEvent({ id: `section_${s.id}_${b.id}`, title: `${s.title} - ${b.label}`, customFields: b.customFields || [] });
-                                                    } else if (b.link) {
-                                                        window.open(b.link, '_blank');
-                                                    }
-                                                }}>{b.label}</button>
-                                            ))}
+                                            {(s.buttons || []).map(b => <button key={b.id} className={renderButtonStyle(b)} onClick={e => { e.stopPropagation(); window.open(b.link, '_blank'); }}>{b.label}</button>)}
                                         </div>
                                     </div>
                                 </div>
