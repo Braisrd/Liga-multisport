@@ -47,16 +47,9 @@
         const firebaseConfig = { apiKey: "AIzaSyCmuNrhWE8Aw24_qUK23Qo4u_W5M6cAFN4", authDomain: "liga-multisport.firebaseapp.com", projectId: "liga-multisport", storageBucket: "liga-multisport.firebasestorage.app", messagingSenderId: "983340811794", appId: "1:983340811794:web:a86d9e3dbb620accebbacb", measurementId: "G-TPNXY1LNX9" };
         const app = initializeApp(firebaseConfig); window.db = getFirestore(app); window.messaging = getMessaging(app); window.getToken = getToken; window.onMessage = onMessage; window.collection = collection; window.addDoc = addDoc; window.updateDoc = updateDoc; window.deleteDoc = deleteDoc; window.doc = doc; window.getDoc = getDoc; window.setDoc = setDoc; window.onSnapshot = onSnapshot; window.query = query; window.orderBy = orderBy; window.limit = limit; window.where = where;
 
+        // Service Worker registration moved to end of body to use firebase-messaging-sw.js
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then((registration) => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch((err) => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
+            // Old registration removed
         }
     </script>
     <link

@@ -1,33 +1,39 @@
-# 🔔 Guía Maestra de Notificaciones (v2)
+# 🔔 Guía Maestra de Notificaciones (v3)
 
-## 🔄 ¿Cómo se actualiza la App?
+## ✅ Estado Actual
 
-La aplicación es una PWA moderna. Se actualiza sola, pero a veces necesita un empujoncito.
-
-* **Usuario Nuevo**: Al entrar, ve la ultimísima versión.
-* **Usuario Recurrente**: La app intenta actualizarse en segundo plano. La forma más rápida de forzar la actualización es **cerrar completamente la app (quitarla de la multitarea)** y volver a abrirla.
-* *Nota*: Hemos cambiado el fondo de carga a azul celeste. Si sigues viendo el negro, cierra y abre un par de veces.
+1. **Configuración Firebase**: Actualizada con tus datos exactos (incluido `measurementId`).
+2. **Service Worker**: Unificado. Ahora un solo archivo (`firebase-messaging-sw.js`) maneja tanto el funcionamiento offline como las notificaciones.
+3. **Token**: Arreglado el error 404.
 
 ---
 
-## 📲 Notificaciones Push: Guía Definitiva
+## 🔑 La Clave VAPID (¡Importante!)
 
-### Diferencia: "Prueba" vs "Campaña"
+Para que el botón de "Obtener Token" funcione, necesitas una "Llave VAPID" pública.
+Yo he puesto una por defecto, pero **si no es la de tu proyecto, no funcionará**.
 
-Firebase tiene dos formas de enviar:
+### Cómo conseguir TU clave VAPID
 
-1. **Mensaje de Prueba (Test)**: Solo para TI. Para comprobar que funciona.
-    * **Requiere**: "Token de registro FCM".
-    * *¿Dónde lo saco?*: He añadido un botón en **Panel Admin > Buzón** que dice "Obtener Token". Lo copias, lo pegas en Firebase y te llega solo a ti.
+1. Ve a [Firebase Console > Configuración del Proyecto > Cloud Messaging](https://console.firebase.google.com/u/0/project/liga-multisport/settings/cloudmessaging).
+2. Baja hasta **"Configuración web"**.
+3. Si no hay nada, dale a "Generate key pair" (Generar par de claves).
+4. Copia la clave larga que empieza por algo como `BcP...` o `AI...`.
 
-2. **Campaña (A todos)**: Para TODOS los usuarios.
-    * **NO requiere token**.
-    * Pasos:
-        1. Nueva campaña > Notificaciones.
-        2. Título y Texto.
-        3. **Segmentación del dispositivo (Target)**: Selecciona la opción que dice **"Aplicación web"** (Suele poner un código como `web:a86...`).
-        4. Programación: "Ahora".
-        5. Publicar.
+### ¿Dónde la pongo?
+
+Si la que tienes es diferente a la que está en el código, avísame y te digo dónde cambiarla (es en `index.html`, buscando "vapidKey").
+
+---
+
+## 🔄 ¿Cómo se actualiza la App?
+
+La aplicación PWA se actualiza sola.
+
+1. **Cierra** la app de la multitarea.
+2. **Abre** la app.
+3. Espera unos segundos y repite si es necesario.
+*Si has cambiado el fondo a azul, significa que ya se ha actualizado.*
 
 ---
 
@@ -39,10 +45,3 @@ Para enviar un aviso a toda la liga:
     * *(Esto pone el punto rojo en la app)*
 2. **Firebase Console > Campaña**: Copia el mismo mensaje, elige "Aplicación web" en Target y envíalo.
     * *(Esto hace vibrar los móviles)*
-
----
-
-### FAQ
-
-* **¿Token FCM?**: Solo para pruebas. No te rayes con esto para mensajes normales.
-* **¿Se borran?**: Sí, el buzón guarda las últimas 20. O las borras tú con la papelera 🗑️.

@@ -10,6 +10,7 @@ firebase.initializeApp({
     storageBucket: "liga-multisport.firebasestorage.app",
     messagingSenderId: "983340811794",
     appId: "1:983340811794:web:a86d9e3dbb620accebbacb",
+    measurementId: "G-TPNXY1LNX9"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
