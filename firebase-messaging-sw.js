@@ -18,14 +18,48 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // Customize notification here
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/logo.png'
+        icon: '/logo.png',
+        data: payload.data // Pass data payload to notification
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle Notification Clicks (Fixes 404 and enables Deep Linking)
+self.addEventListener('notificationclick', function (event) {
+    console.log('[Service Worker] Notification click received.');
+    event.notification.close();
+
+    // Define the URL to open (relative to the SW scope)
+    let urlToOpen = './';
+
+    // Check for deep link data
+    if (event.notification.data && event.notification.data.url) {
+        urlToOpen = event.notification.data.url;
+    } else if (event.notification.data && event.notification.data.section) {
+        urlToOpen = './?section=' + event.notification.data.section;
+    }
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            // If a window is already open, focus it
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
+                if (client.url.includes('braisrd.github.io') && 'focus' in client) {
+                    // Optionally navigate the focused client
+                    if (urlToOpen !== './') client.navigate(urlToOpen);
+                    return client.focus();
+                }
+            }
+            // Otherwise open a new window
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
+    );
 });
 
 // --- PWA Caching Logic (Merged from service-worker.js) ---
