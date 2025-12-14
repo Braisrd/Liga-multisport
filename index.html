@@ -228,18 +228,6 @@
             return { showInstall, install };
         };
 
-        const useStandalone = () => {
-            const [isStandalone, setIsStandalone] = useState(false);
-            useEffect(() => {
-                const check = () => {
-                    const isStand = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app://');
-                    setIsStandalone(isStand);
-                };
-                check();
-                window.matchMedia('(display-mode: standalone)').addEventListener('change', check);
-            }, []);
-            return isStandalone;
-        };
 
         const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
             if (!isOpen) return null;
@@ -813,7 +801,6 @@
             const [selectedDay, setSelectedDay] = useState(null);
 
             const { showInstall, install } = usePWAInstall();
-            const isStandalone = useStandalone();
 
             // Inbox State
             const [showInbox, setShowInbox] = useState(false);
