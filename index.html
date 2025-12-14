@@ -115,7 +115,23 @@
 </head>
 
 <body class="bg-celestial">
+    <div id="global-error"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; color:red; z-index:9999; padding:20px;">
+        <h1>Algo salió mal (Error Global)</h1>
+        <pre id="error-msg"></pre>
+        <button onclick="window.location.reload()"
+            style="background:white; color:black; padding:10px; border-radius:5px; margin-top:20px;">Recargar</button>
+    </div>
     <div id="root"></div>
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            const div = document.getElementById('global-error');
+            const content = document.getElementById('error-msg');
+            div.style.display = 'block';
+            content.innerHTML = `Error: ${msg}\nEn: ${url}:${line}:${col}\nStack: ${error?.stack}`;
+            return false;
+        };
+    </script>
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef, Fragment } = React;
 
@@ -307,9 +323,9 @@
             return (
                 <Modal isOpen={isOpen} onClose={onClose} size="xl">
                     <div className="p-8">
-                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold">Panel Admin</h2><div className="flex gap-4"><button onClick={onOpenDB} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-500">Ver Base de Datos</button><div className="flex bg-black/40 p-1 rounded-lg">{[{ id: 'events', l: 'Eventos' }, { id: 'types', l: 'Tipos' }, { id: 'special', l: 'Secciones' }].map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-md font-bold text-sm ${tab === t.id ? 'bg-celestial text-black' : 'text-gray-400'}`}>{t.l}</button>)}</div></div></div>
+                        <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-bold">Panel Admin</h2><div className="flex gap-4"><button onClick={onOpenDB} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-500">Ver Base de Datos</button><div className="flex bg-black/40 p-1 rounded-lg">{[{ id: 'events', l: 'Eventos' }, { id: 'types', l: 'Tipos' }, { id: 'special', l: 'Secciones' }, { id: 'inbox', l: 'Buzón' }].map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-md font-bold text-sm ${tab === t.id ? 'bg-celestial text-black' : 'text-gray-400'}`}>{t.l}</button>)}</div></div></div>
                         {tab === 'events' && (
-                            <div className="grid lg:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <form onSubmit={e => { e.preventDefault(); onSaveEvent(formData, editingId); setFormData(INITIAL_FORM); setEditingId(null); }} className="space-y-4">
                                     <h3 className="font-bold text-celestial">{editingId ? 'Editando Evento' : 'Nuevo Evento'}</h3>
                                     <input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Título" required className="w-full bg-black/40 p-3 rounded" />
@@ -330,6 +346,57 @@
                             <ImageUploader value={s.imageUrl} onChange={v => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, imageUrl: v } : x))} />
                             <div className="bg-black/20 p-3 rounded"><label className="text-xs font-bold text-gray-400">Opciones para Votación (Poll)</label>{(s.pollOptions || []).map((opt, i) => <div key={i} className="flex gap-2 mt-1"><input value={opt} onChange={e => { const u = [...(s.pollOptions || [])]; u[i] = e.target.value; safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: u } : x)) }} className="w-full bg-black/40 p-1 rounded text-sm" /><button onClick={() => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: s.pollOptions.filter((_, idx) => idx !== i) } : x))} className="text-red-500">X</button></div>)}<button onClick={() => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, pollOptions: [...(s.pollOptions || []), ''] } : x))} className="text-xs mt-1 bg-white/10 px-2 py-1 rounded">+ Opción</button></div>
                             <ButtonBuilder buttons={s.buttons || []} onChange={btns => safeUpdateSection(specialSections.map(x => x.id === s.id ? { ...x, buttons: btns } : x))} /></div>))}<button onClick={() => { window.setDoc(window.doc(window.db, 'config', 'specialSections'), { sections: specialSections }); alert('Guardado'); }} className="w-full bg-celestial text-black py-3 rounded font-bold">GUARDAR CAMBIOS</button></div>)}
+
+                        {tab === 'inbox' && (
+                            <div className="space-y-6 animate-fade-in-up">
+                                <form onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    if (!window.confirm('¿Publicar este aviso? Todos los usuarios verán el punto rojo.')) return;
+                                    const title = e.target.title.value;
+                                    const body = e.target.body.value;
+                                    try {
+                                        await window.addDoc(window.collection(window.db, "announcements"), {
+                                            title,
+                                            body,
+                                            date: new Date().toISOString()
+                                        });
+                                        alert('Aviso publicado correctamente en el Buzón.');
+                                        e.target.reset();
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('Error al publicar: ' + err.message);
+                                    }
+                                }} className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-4">
+                                    <h3 className="font-bold text-xl text-celestial flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-celestial/20 flex items-center justify-center text-lg">📢</div> Nueva Notificación</h3>
+                                    <p className="text-sm text-gray-400">Esto añadirá el mensaje al "Buzón" de la app y activará el punto rojo 🔴 para todos.</p>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">Título</label>
+                                        <input name="title" required placeholder="Ej: Cambio de hora en el Torneo" className="w-full bg-black/40 border border-white/10 p-3 rounded-lg focus:border-celestial outline-none transition-colors" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">Mensaje</label>
+                                        <textarea name="body" required rows="4" placeholder="Ej: Debido a la lluvia, los partidos de hoy se mueven al pabellón cubierto..." className="w-full bg-black/40 border border-white/10 p-3 rounded-lg focus:border-celestial outline-none transition-colors"></textarea>
+                                    </div>
+
+                                    <button type="submit" className="w-full bg-gradient-to-r from-celestial to-blue-600 text-white font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-celestial/20">
+                                        Publicar en la App
+                                    </button>
+                                </form>
+
+                                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
+                                    <h4 className="font-bold text-yellow-500 mb-2 flex items-center gap-2">⚠️ Importante: Notificaciones Móvil</h4>
+                                    <p className="text-sm text-gray-300 leading-relaxed mb-4">
+                                        Publicar aquí <b>SOLO</b> actualiza la app (Buzón + Punto rojo).<br />
+                                        Para que le vibre el móvil a la gente (Notificación Push), debes ir a Firebase Console y enviarla manualmente.
+                                    </p>
+                                    <a href="https://console.firebase.google.com/u/0/project/liga-multisport/notification/compose" target="_blank" className="inline-flex items-center gap-2 text-xs bg-yellow-500/20 text-yellow-200 px-3 py-2 rounded-lg hover:bg-yellow-500/30 transition-colors">
+                                        Ir a Firebase Console <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Modal>
             );
@@ -409,8 +476,8 @@
                         <h1 className="text-3xl font-black text-celestial">BASE DE DATOS</h1>
                         <button onClick={onBack} className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg font-bold">Volver</button>
                     </div>
-                    <div className="flex gap-8 flex-1 overflow-hidden">
-                        <div className="w-1/4 overflow-y-auto pr-4 border-r border-white/10 space-y-2">
+                    <div className="flex flex-col md:flex-row gap-8 flex-1 overflow-hidden">
+                        <div className="w-full md:w-1/4 h-64 md:h-full overflow-y-auto pr-4 border-b md:border-b-0 md:border-r border-white/10 space-y-2">
                             <h3 className="font-bold text-gray-400 mb-4 sticky top-0 bg-[#0a0a0f] py-2">Ítems</h3>
                             {items.map(e => (
                                 <button key={e.id} onClick={() => setSelectedId(e.id)} className={`w-full text-left p-3 rounded transition-colors flex justify-between items-center ${selectedId === e.id ? 'bg-celestial text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}>
@@ -598,58 +665,43 @@
 
 
 
-        const NotificationButton = () => {
-            const [permission, setPermission] = useState(Notification.permission);
-            const [loading, setLoading] = useState(false);
 
-            const requestPermission = async () => {
-                if (loading) return;
-                setLoading(true);
-                try {
-                    const perm = await Notification.requestPermission();
-                    setPermission(perm);
-                    if (perm === 'granted') {
-                        // Get token
-                        // REPLACE 'YOUR_VAPID_KEY_HERE' WITH YOUR ACTUAL KEY FROM FIREBASE CONSOLE
-                        const token = await window.getToken(window.messaging, { vapidKey: 'BJZr34oV68SKsSBbxY-rB7xzbcKQ4DjIIsgtW-y8SW5I-4dGHIpeHsmIo7mQEMMXNK8ov5RqMRKw7-IWD1_Oa4M' });
-                        if (token) {
-                            console.log('FCM Token:', token);
-                            alert('Notificaciones activadas. Token visible en consola (F12).');
-                        } else {
-                            console.log('No registration token available.');
-                        }
-                    } else {
-                        alert('Permiso denegado.');
-                    }
-                } catch (err) {
-                    console.error('Error requesting permission', err);
-                    alert('Error al activar notificaciones');
-                } finally {
-                    setLoading(false);
-                }
-            };
 
-            useEffect(() => {
-                if (permission === 'granted') {
-                    const unsubscribe = window.onMessage(window.messaging, (payload) => {
-                        console.log('Message received. ', payload);
-                        const title = payload.notification?.title || 'Nuevo Mensaje';
-                        const body = payload.notification?.body || '';
-                        // Simple custom toast
-                        const toast = document.createElement('div');
-                        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-[#13131f] border border-celestial text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-fade-in-up flex items-center gap-4';
-                        toast.innerHTML = `<div class="text-2xl">🔔</div><div><div class="font-bold">${title}</div><div class="text-sm text-gray-400">${body}</div></div>`;
-                        document.body.appendChild(toast);
-                        setTimeout(() => toast.remove(), 5000);
-                    });
-                    return () => unsubscribe && unsubscribe(); // onMessage returns unsubscribe function
-                }
-            }, [permission]);
 
+        const NotificationButton = ({ onClick, hasUnread }) => (
+            <button onClick={onClick} className="relative p-3 bg-white/5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                <Bell className="w-5 h-5" />
+                {hasUnread && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0a0a0f]"></span>}
+            </button>
+        );
+
+        const AnnouncementsModal = ({ isOpen, onClose, announcements, permission, onRequestPermission }) => {
+            if (!isOpen) return null;
             return (
-                <button onClick={requestPermission} className={`p-3 rounded-full shadow-lg transition-colors ${permission === 'granted' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
-                    <Bell className="w-5 h-5" />
-                </button>
+                <Modal isOpen={isOpen} onClose={onClose} size="lg">
+                    <div className="p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-celestial to-purple-400 bg-clip-text text-transparent">Buzón</h2>
+                            {permission !== 'granted' && (
+                                <button onClick={onRequestPermission} className="text-xs bg-celestial text-black px-3 py-1 rounded-full font-bold flex items-center gap-1 hover:scale-105 transition-transform">
+                                    <Bell className="w-3 h-3" /> Activar Avisos
+                                </button>
+                            )}
+                        </div>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                            {announcements.length === 0 && <p className="text-center text-gray-500 py-8 italic">No hay mensajes aún.</p>}
+                            {announcements.map(a => (
+                                <div key={a.id} className="bg-white/5 p-4 rounded-xl border-l-4 border-celestial relative overflow-hidden group">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-lg">{a.title}</h3>
+                                        <span className="text-[10px] text-gray-400 bg-black/30 px-2 py-1 rounded">{new Date(a.date).toLocaleDateString()}</span>
+                                    </div>
+                                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">{a.body}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </Modal>
             );
         };
 
@@ -671,13 +723,68 @@
 
             const { showInstall, install } = usePWAInstall();
 
+            // Inbox State
+            const [showInbox, setShowInbox] = useState(false);
+            const [announcements, setAnnouncements] = useState([]);
+            const [hasUnread, setHasUnread] = useState(false);
+            const [permission, setPermission] = useState(Notification.permission);
+
+            const toggleInbox = () => {
+                setShowInbox(!showInbox);
+                if (!showInbox && announcements.length > 0) {
+                    setHasUnread(false);
+                    localStorage.setItem('lastReadAnnouncement', new Date().toISOString());
+                }
+            };
+
+            const requestPermission = async () => {
+                try {
+                    const perm = await Notification.requestPermission();
+                    setPermission(perm);
+                    if (perm === 'granted') {
+                        const token = await window.getToken(window.messaging, { vapidKey: 'BJZr34oV68SKsSBbxY-rB7xzbcKQ4DjIIsgtW-y8SW5I-4dGHIpeHsmIo7mQEMMXNK8ov5RqMRKw7-IWD1_Oa4M' });
+                        if (token) console.log('Token:', token);
+                    }
+                } catch (e) { console.error(e); }
+            };
+
             useEffect(() => {
                 if (!window.db) return;
                 const u1 = window.onSnapshot(window.query(window.collection(window.db, "events"), window.orderBy("date", "asc")), s => setEvents(s.docs.map(d => ({ id: d.id, ...d.data() }))));
                 const u2 = window.onSnapshot(window.doc(window.db, "config", "eventTypes"), d => setEventTypes(d.exists() ? (d.data().types || DEFAULT_EVENT_TYPES) : DEFAULT_EVENT_TYPES));
                 const u3 = window.onSnapshot(window.doc(window.db, "config", "specialSections"), d => setSpecialSections(d.exists() ? (d.data().sections || []) : []));
-                return () => { u1(); u2(); u3(); };
+
+                // Announcements Logic
+                const u4 = window.onSnapshot(window.query(window.collection(window.db, "announcements"), window.orderBy("date", "desc"), window.limit(20)), s => {
+                    const data = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setAnnouncements(data);
+                    // Check unread logic (simple version: if latest announcement is newer than stored 'lastRead')
+                    const lastRead = localStorage.getItem('lastReadAnnouncement');
+                    if (data.length > 0 && (!lastRead || new Date(data[0].date) > new Date(lastRead))) {
+                        setHasUnread(true);
+                    }
+                });
+
+                return () => { u1(); u2(); u3(); u4(); };
             }, []);
+
+            // Messaging Logic
+            useEffect(() => {
+                if (permission === 'granted' && window.messaging) {
+                    const unsubscribe = window.onMessage(window.messaging, (payload) => {
+                        console.log('Message received. ', payload);
+                        const title = payload.notification?.title || 'Nuevo Mensaje';
+                        const body = payload.notification?.body || '';
+                        setHasUnread(true);
+                        // Toast
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-[#13131f] border border-celestial text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-fade-in-up flex items-center gap-4';
+                        toast.innerHTML = `<div class="text-2xl">🔔</div><div><div class="font-bold">${title}</div><div class="text-sm text-gray-400">${body}</div></div>`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 5000);
+                    });
+                }
+            }, [permission]);
 
             const monthData = useMemo(() => {
                 const dt = new Date(currentYear, currentMonth, 1);
@@ -717,10 +824,13 @@
                     {showAdminPanel && <div className="fixed top-0 left-0 hidden"></div> /* Hack to access stats inside dashboard context if needed, but we pass setStatsEvent via props currently? No, we need to modify AdminDashboard to accept onOpenStats */}
 
                     <div className="fixed top-4 right-4 z-50 flex gap-2">
-                        <NotificationButton />
+                        <NotificationButton onClick={toggleInbox} hasUnread={hasUnread} />
                         {isAdmin && <button onClick={() => setShowAdminPanel(true)} className="p-3 bg-celestial text-black rounded-full shadow-lg hover:bg-celestialDark transition-colors"><Settings className="w-5 h-5" /></button>}
                         <button onClick={() => isAdmin ? setIsAdmin(false) : setShowLogin(true)} className={`p-3 rounded-full shadow-lg transition-colors ${isAdmin ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}><Lock className="w-5 h-5" /></button>
                     </div>
+
+
+                    {showInbox && <AnnouncementsModal isOpen={true} onClose={() => setShowInbox(false)} announcements={announcements} permission={permission} onRequestPermission={requestPermission} />}
 
                     {showInstall && (
                         <div className="fixed bottom-0 left-0 right-0 p-4 z-50 animate-fade-in-up flex justify-center">
@@ -837,7 +947,12 @@
                 </div>
             );
         }
-        const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 
