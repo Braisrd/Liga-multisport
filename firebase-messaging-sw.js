@@ -18,29 +18,25 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // [DUPLICATE FIX] We disable manual display because the browser already shows the 'notification' payload automatically.
-    // This prevents seeing double notifications (one from System, one from this script).
-    // const notificationTitle = payload.notification.title;
-    // const notificationOptions = {
-    //     body: payload.notification.body,
-    //     icon: './logo.png',
-    //     data: payload.data // Pass data payload to the notification
-    // };
-    // self.registration.showNotification(notificationTitle, notificationOptions);
+    // Customize notification here
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/logo.png',
+        data: payload.data // Pass data payload to the notification
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener('notificationclick', function (event) {
     console.log('[firebase-messaging-sw.js] Notification click received.');
     event.notification.close();
 
-    // [404 FIX] Hardcoded base URL to ensure we never hit the root domain error on GitHub Pages.
-    // [404 FIX] Hardcoded base URL to ensure we never hit the root domain error on GitHub Pages.
-    // We append index.html to be absolutely sure it doesn't try to load the directory root.
-    const FIXED_SCOPE = 'https://braisrd.github.io/Paso-Ecuador-INEF/index.html';
-
-    // Check key 'url' in data, or use the fixed scope.
-    // Note: If the payload has no data, or no url in data, we force the App URL.
-    let urlToOpen = (event.notification.data && event.notification.data.url) ? event.notification.data.url : FIXED_SCOPE;
+    // Fix for 404 on GitHub Pages: Use registration.scope to get the correct base URL
+    // e.g., https://braisrd.github.io/Paso-Ecuador-INEF/
+    // Checks for a 'url' field in the data payload for deep linking
+    let urlToOpen = (event.notification.data && event.notification.data.url) ? event.notification.data.url : self.registration.scope;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (windowClients) {
