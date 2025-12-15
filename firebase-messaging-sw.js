@@ -34,9 +34,12 @@ self.addEventListener('notificationclick', function (event) {
     event.notification.close();
 
     // [404 FIX] Hardcoded base URL to ensure we never hit the root domain error on GitHub Pages.
-    const FIXED_SCOPE = 'https://braisrd.github.io/Paso-Ecuador-INEF/';
+    // [404 FIX] Hardcoded base URL to ensure we never hit the root domain error on GitHub Pages.
+    // We append index.html to be absolutely sure it doesn't try to load the directory root.
+    const FIXED_SCOPE = 'https://braisrd.github.io/Paso-Ecuador-INEF/index.html';
 
     // Check key 'url' in data, or use the fixed scope.
+    // Note: If the payload has no data, or no url in data, we force the App URL.
     let urlToOpen = (event.notification.data && event.notification.data.url) ? event.notification.data.url : FIXED_SCOPE;
 
     event.waitUntil(
