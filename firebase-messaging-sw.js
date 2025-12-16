@@ -29,15 +29,13 @@ messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
     // User requested to restore this manual notification as it was the "working" one.
-    // We attempt to dedupe using a specific tag, though some browsers might still show both 
-    // if the system notification has a different tag/ID.
+    // We removed the 'tag' because it caused the "bad" (system) notification to override this one on mobile.
+    // This implies duplicates will return, but at least the functioning one will be present.
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         icon: '/logo.png',
-        data: payload.data, // Important: pass data for click handling
-        tag: 'message-tag', // Try to replace existing notifications
-        renotify: true
+        data: payload.data // Important: pass data for click handling
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
