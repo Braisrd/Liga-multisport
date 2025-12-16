@@ -137,8 +137,16 @@
         window.subscribeUser = async (silent = false) => {
             try {
                 if (!silent) window.showToast('Consejo', 'Activa las notificaciones para estar al tanto de los eventos.');
+
+                // Specific iOS warning (since Push API support is recent/tricky there)
+                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS && !window.matchMedia('(display-mode: standalone)').matches) {
+                    if (!silent) window.showToast('⚠️ iOS', 'En iPhone, primero debes "Añadir a Inicio" para recibir avisos.');
+                    // We continue anyway, as iOS 16.4+ supports it if added to home screen
+                }
+
                 if (!('Notification' in window)) {
-                    console.error("This browser does not support desktop notification");
+                    if (!silent) window.showToast('❌ No compatible', 'Tu navegador no soporta notificaciones.');
                     return false;
                 }
                 const permission = await Notification.requestPermission();
@@ -259,45 +267,48 @@
                     };
                     img.onerror = (e) => reject(new Error("Error loading image"));
                 };
-                reader.onerror = error => reject(error);
             });
         };
 
+        // PWA Install Hook (Fixed variable names)
         const usePWAInstall = () => {
-            const [installPrompt, setInstallPrompt] = useState(null);
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
             const [showInstall, setShowInstall] = useState(false);
+            const [isIOS, setIsIOS] = useState(false);
 
             useEffect(() => {
-                // Check if already captured
-                if (window.deferredInstallPrompt) {
-                    setInstallPrompt(window.deferredInstallPrompt);
+                const iOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+                setIsIOS(iOS);
+
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+                // If iOS and not standalone, show install button permanently
+                if (iOS && !isStandalone) {
                     setShowInstall(true);
                 }
 
                 const handler = (e) => {
                     e.preventDefault();
-                    window.deferredInstallPrompt = e;
-                    setInstallPrompt(e);
+                    setDeferredPrompt(e);
                     setShowInstall(true);
-                    console.log('Install prompt captured in hook');
                 };
                 window.addEventListener('beforeinstallprompt', handler);
                 return () => window.removeEventListener('beforeinstallprompt', handler);
             }, []);
 
-            const install = async () => {
-                const promptEvent = installPrompt || window.deferredInstallPrompt;
-                if (!promptEvent) return;
-                promptEvent.prompt();
-                const { outcome } = await promptEvent.userChoice;
-                if (outcome === 'accepted') {
-                    setShowInstall(false);
-                    window.deferredInstallPrompt = null;
-                }
-                setInstallPrompt(null);
+            const install = () => {
+                if (isIOS) return; // Handled by UI
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        setShowInstall(false);
+                    }
+                    setDeferredPrompt(null);
+                });
             };
 
-            return { showInstall, install };
+            return { showInstall, setShowInstall, install, isIOS };
         };
 
 
@@ -904,7 +915,18 @@
             const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
             const [selectedDay, setSelectedDay] = useState(null);
 
-            const { showInstall, install } = usePWAInstall();
+            const { showInstall, setShowInstall, install, isIOS } = usePWAInstall();
+            const [showIOSHint, setShowIOSHint] = useState(false);
+            const [isInAppBrowser, setIsInAppBrowser] = useState(false);
+
+            // Check In-App Browser on mount
+            useEffect(() => {
+                const ua = navigator.userAgent || navigator.vendor || window.opera;
+                // Detect Instagram, Facebook, TikTok, WhatsApp, etc.
+                if (/Instagram|FBAN|FBAV|TikTok|WhatsApp/.test(ua)) {
+                    setIsInAppBrowser(true);
+                }
+            }, []);
 
             // Inbox State
             const [showInbox, setShowInbox] = useState(false);
@@ -1029,10 +1051,37 @@
                                     <h4 className="font-bold text-white">Instalar App</h4>
                                     <p className="text-xs text-gray-400">Añade a inicio para acceso rápido y sin conexión.</p>
                                 </div>
-                                <button onClick={install} className="bg-celestial text-black px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform">
+                                <button onClick={() => isIOS ? setShowIOSHint(true) : install()} className="bg-celestial text-black px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform">
                                     Instalar
                                 </button>
                             </div>
+                        </div>
+                    )}
+                    {/* iOS Install Warning / Instructions */}
+                    {(showInstall && isIOS && showIOSHint) && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setShowIOSHint(false)}>
+                            <div className="bg-[#13131f] border border-celestial/30 p-8 rounded-3xl shadow-2xl max-w-sm w-full relative" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setShowIOSHint(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X className="w-6 h-6" /></button>
+                                <div className="text-center">
+                                    <div className="text-4xl mb-4">📲</div>
+                                    <h3 className="text-2xl font-bold text-white mb-4">Instalar en iOS</h3>
+                                    <p className="text-gray-300 mb-6">En iPhone/iPad no existe un botón directo. Sigue estos pasos:</p>
+                                    <ol className="text-left text-sm text-gray-400 space-y-4 mb-6 list-decimal pl-4">
+                                        <li>Pulsa el botón <strong>Compartir</strong> <span className="text-xl">📤</span> (abajo en Safari).</li>
+                                        <li>Desliza y pulsa <strong>"Añadir a Inicio"</strong> <span className="text-xl">➕</span>.</li>
+                                        <li>Confirma pulsando <strong>"Añadir"</strong>.</li>
+                                    </ol>
+                                    <button onClick={() => setShowIOSHint(false)} className="w-full py-3 bg-celestial text-black font-bold rounded-xl">Entendido</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* In-App Browser Warning */}
+                    {isInAppBrowser && (
+                        <div className="fixed top-0 left-0 right-0 bg-red-600 text-white p-3 z-[100] text-center text-sm font-bold flex justify-between items-center px-6">
+                            <span>⚠️ Estás usando un navegador limitado. Abre esta web en Safari o Chrome para que todo funcione.</span>
+                            <button onClick={() => setIsInAppBrowser(false)}><X className="w-5 h-5" /></button>
                         </div>
                     )}
 
