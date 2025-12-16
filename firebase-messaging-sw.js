@@ -27,13 +27,20 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // Browser automatically shows notification if 'notification' key is present.
-    // We do NOT need to show it manually again, avoiding duplicates.
 
-    // If you wanted to handle data-only messages, you would do it here.
-    // const title = payload.notification?.title || 'Nuevo Mensaje';
-    // const options = { body: payload.notification?.body, icon: '/logo.png' };
-    // self.registration.showNotification(title, options);
+    // User requested to restore this manual notification as it was the "working" one.
+    // We attempt to dedupe using a specific tag, though some browsers might still show both 
+    // if the system notification has a different tag/ID.
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/logo.png',
+        data: payload.data, // Important: pass data for click handling
+        tag: 'message-tag', // Try to replace existing notifications
+        renotify: true
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener('notificationclick', function (event) {
